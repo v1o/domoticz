@@ -430,7 +430,7 @@ typedef struct _tLimitlessLights {
 	unsigned long id;
 	unsigned char dunit; //0=All, 1=Group1,2=Group2,3=Group3,4=Group4
 	unsigned char command;
-	unsigned char value;
+	uint32_t value; //(for Color wwrrggbb)
 	_tLimitlessLights()
 	{
 		id = 1;
