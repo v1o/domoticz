@@ -220,19 +220,19 @@ bool CPhilipsHue::SwitchLight(const int nodeID, const std::string &LCmd, const i
 	}
 	else if (LCmd == "Set Level")
 	{
-		sPostData << "{\"on\": true, \"bri\": " << svalue << " }";
+		sPostData << "{\"on\": true, \"bri\": " << svalue << ", \"transitiontime\": 30 }";
 	}
 	else if (LCmd == "Set White")
 	{
-		sPostData << "{\"on\": true, \"sat\": 0 , \"bri\": 255, \"hue\": 0 }";
+		sPostData << "{\"on\": true, \"sat\": 0 , \"bri\": 255, \"hue\": 0, \"transitiontime\": 30 }";
 	}
 	else if (LCmd == "Set Hue")
 	{
-		sPostData << "{\"on\": true, \"sat\": 255 , \"hue\": " << svalue << " }";
+		sPostData << "{\"on\": true, \"sat\": 255 , \"hue\": " << svalue << ", \"transitiontime\": 30 }";
 	}
 	else if (LCmd == "Set Hex")
 	{
-		sPostData << "{\"on\": true, \"sat\": 255 , \"hue\": " << svalue << " }";
+		sPostData << "{\"on\": true, \"sat\": 255 , \"hue\": " << svalue << ", \"transitiontime\": 30 }";
 	}
 	else
 	{
@@ -587,14 +587,14 @@ bool CPhilipsHue::GetLights(const Json::Value &root)
 			bool bIsOn = light["state"]["on"].asBool();
 			bool bDoSend = true;
 			_eHueLightType LType = HLTYPE_NORMAL;
-			
+
 			if (bIsOn)
 			{
 				tlight.cmd = light2_sOn;
 			}
 			else
 				tlight.cmd = light2_sOff;
-				
+
 			if (!light["state"]["bri"].empty())
 			{
 				//Lamp with brightness control
