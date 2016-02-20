@@ -18,7 +18,7 @@ USERNAME=pi
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
-DAEMON=/home/$USERNAME/domoticz/$NAME
+DAEMON=/home/$USERNAME/dev-domoticz/$NAME
 DAEMON_ARGS="-daemon"
 #DAEMON_ARGS="$DAEMON_ARGS -daemonname $NAME -pidfile $PIDFILE"
 DAEMON_ARGS="$DAEMON_ARGS -www 8080"
