@@ -42,13 +42,13 @@ commandArray = {}
 if (
 	timeofday['Nighttime'] and
 	timedifference(otherdevices_lastupdate['Burglar']) > 600 and
-	(otherdevices['TV'] == 'On' or otherdevices['Sofa'] == 'On')) then
+	(otherdevices['Hallway1'] == 'On' or otherdevices['TV'] == 'On' or otherdevices['Sofa'] == 'On')) then
+
+	print('Turning off Sofa light')
 
 	commandArray['Hallway1'] = 'Off AFTER 5'
 	commandArray['TV'] = 'Off AFTER 3'
 	commandArray['Sofa'] = 'Off'
-
-	print('Turning off Sofa light')
 end
 
 return commandArray

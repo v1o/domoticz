@@ -38,8 +38,11 @@ if (timeofday['Nighttime'] and
 	print('Aeotec PIR activated')
 
 	commandArray['Hallway1']='On'
+	commandArray['Hallway1']='Set Level 90'
 	commandArray['TV']='On AFTER 2'
+	commandArray['TV']='Set Level 80'
 	commandArray['Sofa']='On AFTER 4'
+	commandArray['Sofa']='Set Level 50'
 end
 
 return commandArray
