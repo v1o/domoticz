@@ -41,6 +41,9 @@ m_szIPAddress(IPAddress)
 	m_usIPPort=usIPPort;
 	lastKnownSensorState = 0;
 	initSensorData = true;
+	reqState = Idle;
+	notificationEnabled = false;
+	m_bReceiverStarted = false;
 }
 
 bool Comm5TCP::StartHardware()
@@ -123,7 +126,7 @@ void Comm5TCP::processSensorData(const std::string& line)
 	for (int i = 0; i < 16; ++i) {
 		bool on = (sensorbitfield & (1 << i)) != 0 ? true : false;
 		if ((lastKnownSensorState & (1 << i) ^ (sensorbitfield & (1 << i))) || initSensorData) {
-			SendSwitch((i + 1) << 8, 1, 255, on, on ? 100 : 0, "Sensor " + boost::lexical_cast<std::string>(i + 1));
+			SendSwitch((i + 1) << 8, 1, 255, on, 0, "Sensor " + boost::lexical_cast<std::string>(i + 1));
 		}
 	}
 	lastKnownSensorState = sensorbitfield;
@@ -148,7 +151,7 @@ void Comm5TCP::ParseData(const unsigned char* data, const size_t len)
 			unsigned int relaybitfield = ::strtol(tokens[1].c_str(), 0, 16);
 			for (int i = 0; i < 16; ++i) {
 				bool on = (relaybitfield & (1 << i)) != 0 ? true : false;
-				SendSwitch(i + 1, 1, 255, on, on ? 100 : 0, "Relay " + boost::lexical_cast<std::string>(i + 1));
+				SendSwitch(i + 1, 1, 255, on, 0, "Relay " + boost::lexical_cast<std::string>(i + 1));
 			}
 			reqState = Idle;
 		} else if (reqState == QuerySensorState && startsWith(line, "210")) {
@@ -185,10 +188,10 @@ void Comm5TCP::enableNotifications()
 
 bool Comm5TCP::WriteToHardware(const char *pdata, const unsigned char length)
 {
-	tRBUF *pSen = (tRBUF*)pdata;
+	const tRBUF *pSen = reinterpret_cast<const tRBUF*>(pdata);
 
 	unsigned char packettype = pSen->ICMND.packettype;
-	unsigned char subtype = pSen->ICMND.subtype;
+	//unsigned char subtype = pSen->ICMND.subtype;
 
 	if (!mIsConnected)
 		return false;

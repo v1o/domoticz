@@ -62,6 +62,7 @@
 #define sTypeCounterIncremental		0x1C
 #define sTypeKwh					0x1D
 #define sTypeWaterflow				0x1E
+#define sTypeCustom					0x1F
 
 //General Switch
 #define pTypeGeneralSwitch			0xF4
@@ -138,6 +139,13 @@
 #define sSwitchTypeFunkbus			0x4c
 #define sSwitchTypeNice				0x4d
 #define sSwitchTypeForest			0x4e
+#define sSwitchBlindsT1				0x4f
+#define sSwitchMC145026				0x50
+#define sSwitchLobeco				0x51
+#define sSwitchFriedland			0x52
+#define sSwitchBFT					0x53
+#define sSwitchNovatys				0x54
+#define sSwitchHalemeier			0x55
 
 //Switch commands
 #define gswitch_sOff				0x00
@@ -198,7 +206,7 @@
 #define sTypeRego6XXCounter  0x03
 
 //types for evohome
-#define pTypeEvohome 0x45 
+#define pTypeEvohome 0x45
 #define sTypeEvohome 0x00 //Controller
 
 #define pTypeEvohomeZone 0x46 //Seems easier to define a new type here
@@ -208,28 +216,28 @@
 #define sTypeEvohomeWater 0x00 //Hot water (Ideally this would just be a zone but for whatever reason evohome treats this differently)
 
 #define pTypeEvohomeRelay 0x44 //Relay
-#define sTypeEvohomeRelay 0x00 
+#define sTypeEvohomeRelay 0x00
 
 //#define sTypeEvohomeOutside 0x30 //If connected
 //#define sTypeEvohomeStatus 0x40 //Not sure if we can do this in 1 sensor would be for things like zone valve status, boiler relay status (maybe OT values too) and comms errors (maybe seperature sensor or switch for each is easiest)
 
 typedef struct _tThermostat {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	BYTE	id1;
-	BYTE	id2;
-	BYTE	id3;
-	BYTE	id4;
-	unsigned char dunit;
-	unsigned char battery_level;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t	id1;
+	uint8_t	id2;
+	uint8_t	id3;
+	uint8_t	id4;
+	uint8_t dunit;
+	uint8_t battery_level;
 	float temp;
 	float temp1;
 	float temp2;
 	float temp3;
-	unsigned char utemp1;
-	unsigned char utemp2;
-	unsigned char utemp3;
+	uint8_t utemp1;
+	uint8_t utemp2;
+	uint8_t utemp3;
 
 	_tThermostat()
 	{
@@ -253,14 +261,14 @@ typedef struct _tThermostat {
 } tThermostat;
 
 typedef struct _tTempBaro {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	BYTE	id1;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t	id1;
 	float temp;
 	float baro;
 	float altitude;
-	unsigned char forecast;
+	uint8_t forecast;
 
 	_tTempBaro()
 	{
@@ -276,12 +284,12 @@ typedef struct _tTempBaro {
 } _tTempBaro;
 
 typedef struct _tAirQualityMeter {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	BYTE	id1;
-	BYTE	id2;
-	int airquality;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t	id1;
+	uint8_t	id2;
+	int32_t airquality;
 	_tAirQualityMeter()
 	{
 		len=sizeof(_tAirQualityMeter)-1;
@@ -294,14 +302,14 @@ typedef struct _tAirQualityMeter {
 } AirQualityMeter;
 
 typedef struct _tUsageMeter {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	BYTE	id1;
-	BYTE	id2;
-	BYTE	id3;
-	BYTE	id4;
-	unsigned char dunit;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t	id1;
+	uint8_t	id2;
+	uint8_t	id3;
+	uint8_t	id4;
+	uint8_t dunit;
 	float fusage;
 
 	_tUsageMeter()
@@ -319,15 +327,15 @@ typedef struct _tUsageMeter {
 } UsageMeter;
 
 typedef struct _tLightMeter {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	BYTE	id1;
-	BYTE	id2;
-	BYTE	id3;
-	BYTE	id4;
-	unsigned char dunit;
-	unsigned char battery_level;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t	id1;
+	uint8_t	id2;
+	uint8_t	id3;
+	uint8_t	id4;
+	uint8_t dunit;
+	uint8_t battery_level;
 	float fLux;
 
 	_tLightMeter()
@@ -346,14 +354,14 @@ typedef struct _tLightMeter {
 } LightMeter;
 
 typedef struct _tGeneralDevice {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	unsigned char id;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint8_t id;
 	float floatval1;
 	float floatval2;
-	int intval1;
-	int intval2;
+	int32_t intval1;
+	int32_t intval2;
 	_tGeneralDevice()
 	{
 		len=sizeof(_tGeneralDevice)-1;
@@ -368,18 +376,18 @@ typedef struct _tGeneralDevice {
 } GeneralDevice;
 
 typedef struct _tGeneralSwitch {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	int			  id;
-	int			  unitcode;
-	unsigned char cmnd;
-	unsigned char level;
-	unsigned char rssi;
-	unsigned char battery_level;
-	unsigned char seqnbr;
-	int			  reserved_int;
-	float		  reserved_float;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	int32_t id;
+	int32_t unitcode;
+	uint8_t cmnd;
+	uint8_t level;
+	uint8_t rssi;
+	uint8_t battery_level;
+	uint8_t seqnbr;
+	int32_t reserved_int;
+	float	reserved_float;
 	_tGeneralSwitch()
 	{
 		len = sizeof(_tGeneralSwitch) - 1;
@@ -397,16 +405,16 @@ typedef struct _tGeneralSwitch {
 } GeneralSwitch;
 
 typedef struct _tP1Power {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	unsigned long powerusage1;
-	unsigned long powerusage2;
-	unsigned long powerdeliv1;
-	unsigned long powerdeliv2;
-	unsigned long usagecurrent;
-	unsigned long delivcurrent;
-	int ID;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint32_t powerusage1;
+	uint32_t powerusage2;
+	uint32_t powerdeliv1;
+	uint32_t powerdeliv2;
+	uint32_t usagecurrent;
+	uint32_t delivcurrent;
+	int32_t ID;
 	_tP1Power()
 	{
 		len = sizeof(_tP1Power) - 1;
@@ -417,11 +425,11 @@ typedef struct _tP1Power {
 } P1Power;
 
 typedef struct _tP1Gas {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	unsigned long gasusage;
-	int ID;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint32_t gasusage;
+	int32_t ID;
 	_tP1Gas()
 	{
 		len = sizeof(_tP1Gas) - 1;
@@ -432,13 +440,13 @@ typedef struct _tP1Gas {
 } P1Gas;
 
 typedef struct _tLimitlessLights {
-	unsigned char len;
-	unsigned char type;
-	unsigned char subtype;
-	unsigned long id;
-	unsigned char dunit; //0=All, 1=Group1,2=Group2,3=Group3,4=Group4
-	unsigned char command;
-	unsigned char value;
+	uint8_t len;
+	uint8_t type;
+	uint8_t subtype;
+	uint32_t id;
+	uint8_t dunit; //0=All, 1=Group1,2=Group2,3=Group3,4=Group4
+	uint8_t command;
+	uint8_t value;
 	_tLimitlessLights()
 	{
 		id = 1;
@@ -478,12 +486,12 @@ typedef struct _tLimitlessLights {
 
 typedef union tREVOBUF {
 	struct _tEVOHOME1 {
-		unsigned char len;
-		unsigned char type;
-		unsigned char subtype;
-		BYTE	id1;
-		BYTE	id2;
-		BYTE	id3;
+		uint8_t len;
+		uint8_t type;
+		uint8_t subtype;
+		uint8_t	id1;
+		uint8_t	id2;
+		uint8_t	id3;
 		uint8_t	status;
 		uint8_t	mode;
 		uint16_t year;
@@ -495,12 +503,12 @@ typedef union tREVOBUF {
 	} EVOHOME1;
 
 	struct _tEVOHOME2 {
-		unsigned char len;
-		unsigned char type;
-		unsigned char subtype;
-		BYTE	id1;
-		BYTE	id2;
-		BYTE	id3;
+		uint8_t len;
+		uint8_t type;
+		uint8_t subtype;
+		uint8_t	id1;
+		uint8_t	id2;
+		uint8_t	id3;
 		uint8_t	zone;
 		uint8_t	updatetype;
 		int16_t	temperature;
@@ -513,14 +521,14 @@ typedef union tREVOBUF {
 		uint8_t	mins;
 		uint8_t	battery_level;
 	} EVOHOME2;
-	
+
 	struct _tEVOHOME3 {
-		unsigned char len;
-		unsigned char type;
-		unsigned char subtype;
-		BYTE	id1;
-		BYTE	id2;
-		BYTE	id3;
+		uint8_t len;
+		uint8_t type;
+		uint8_t subtype;
+		uint8_t	id1;
+		uint8_t	id2;
+		uint8_t	id3;
 		uint8_t	devno;
 		uint8_t	demand;
 	} EVOHOME3;

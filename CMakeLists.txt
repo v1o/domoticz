@@ -33,7 +33,7 @@ ELSE(USE_BUILTIN_MQTT)
     message(STATUS "Found mosquittopp.h at: ${MQTT_INCLUDE_DIRS}")
     find_library(MQTT_LIBRARIES NAMES libmosquittopp.so)
     IF(MQTT_LIBRARIES)
-      message(STATUS "Found libmosquittopp at: ${MQTT_LIBRARIES}") 
+      message(STATUS "Found libmosquittopp at: ${MQTT_LIBRARIES}")
     ENDIF(MQTT_LIBRARIES)
     INCLUDE_DIRECTORIES(${MQTT_INCLUDE_DIRS})
   ELSE(MQTT_INCLUDE_DIRS)
@@ -152,7 +152,7 @@ FIND_PROGRAM(GIT_EXECUTABLE git
   DOC "git command line client")
 
 MACRO(Gitversion_GET_REVISION dir variable)
-  EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} rev-list HEAD --count
+  EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} --git-dir ./.git rev-list HEAD --count
     WORKING_DIRECTORY ${dir}
     OUTPUT_VARIABLE ${variable}
     OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -223,7 +223,7 @@ hardware/1Wire/1WireForWindows.cpp
 hardware/AnnaThermostat.cpp
 hardware/ASyncSerial.cpp
 hardware/ASyncTCP.cpp
-hardware/BMP085.cpp
+hardware/AtagOne.cpp
 hardware/Comm5TCP.cpp
 hardware/csocket.cpp
 hardware/CurrentCostMeterBase.cpp
@@ -245,6 +245,7 @@ hardware/Gpio.cpp
 hardware/GpioPin.cpp
 hardware/HardwareMonitor.cpp
 hardware/HarmonyHub.cpp
+hardware/I2C.cpp
 hardware/ICYThermostat.cpp
 hardware/KMTronicBase.cpp
 hardware/KMTronic433.cpp
@@ -262,6 +263,8 @@ hardware/MySensorsTCP.cpp
 hardware/NefitEasy.cpp
 hardware/Nest.cpp
 hardware/Netatmo.cpp
+hardware/OpenWebNet.cpp
+hardware/openwebnet/bt_openwebnet.cpp
 hardware/OpenZWave.cpp
 hardware/openzwave/control_panel/ozwcp.cpp
 hardware/openzwave/control_panel/zwavelib.cpp
@@ -290,8 +293,6 @@ hardware/SBFSpot.cpp
 hardware/serial/serial.cpp
 hardware/serial/impl/unix.cpp
 hardware/SolarEdgeAPI.cpp
-hardware/SolarEdgeBase.cpp
-hardware/SolarEdgeTCP.cpp
 hardware/SolarMaxTCP.cpp
 hardware/TCPProxy/tcpproxy_server.cpp
 hardware/TE923.cpp
@@ -326,6 +327,7 @@ webserver/Base64.cpp
 webserver/connection.cpp
 webserver/connection_manager.cpp
 webserver/cWebem.cpp
+webserver/fastcgi.cpp
 webserver/mime_types.cpp
 webserver/reply.cpp
 webserver/request_handler.cpp
@@ -431,7 +433,7 @@ IF(CURL_FOUND)
   MESSAGE(STATUS "Curl libraries found at: ${CURL_LIBRARIES}")
   MESSAGE(STATUS "Curl includes found at: ${CURL_INCLUDE_DIRS}")
   INCLUDE_DIRECTORIES(${CURL_INCLUDE_DIRS})
-  add_definitions(-DNS_ENABLE_SSL)
+  # add_definitions(-DWWW_ENABLE_SSL)
 else()
   MESSAGE(FATAL_ERROR "cURL not found on your system, see install.txt how to get them installed. (for example 'sudo apt-get install curl libcurl4-openssl-dev')")
 ENDIF(CURL_FOUND)
@@ -465,7 +467,7 @@ if(NOT OPENSSL_FOUND)
     target_link_libraries(domoticz ${MD_LIBRARY})
   endif(MD_LIBRARY)
 else()
-  add_definitions(-DNS_ENABLE_SSL)
+  add_definitions(-DWWW_ENABLE_SSL)
   include_directories(${OPENSSL_INCLUDE_DIR})
   target_link_libraries(domoticz ${OPENSSL_LIBRARIES})
 endif()
@@ -531,29 +533,22 @@ else()
   MESSAGE(STATUS "==== OpenZWave not found, support disabled!")
 ENDIF(OpenZWave)
 
-# try to detect Raspberry Pi hardware and WiringPi library. If found, include GPIO support
-find_path(RaspberryPi NAMES bcm_host.h PATHS "/opt/vc/include")
-IF(RaspberryPi)
-  message(STATUS "Building on Raspberry Pi... (bcm_host.h found in ${RaspberryPi})")
-  find_path(WiringPi wiringPi.h)
-  IF(WiringPi)
-    message(STATUS "WiringPi include was found in ${WiringPi}...")
-    find_library(WIRINGPI_LIBRARY NAMES libwiringPi.a)
-    IF(WIRINGPI_LIBRARY)
-      message(STATUS "WiringPi library was found in ${WIRINGPI_LIBRARY}...")
-      add_definitions(-DWITH_GPIO)
-      target_link_libraries(domoticz ${WIRINGPI_LIBRARY})
-    else()
-      message(STATUS "==== WiringPi library not found. GPIO support disabled.")
-    message(STATUS "==== (Please follow http://wiringpi.com/download-and-install/ if you want to use GPIO.)")
-    ENDIF()
+find_path(WiringPi wiringPi.h)
+IF(WiringPi)
+  message(STATUS "WiringPi include was found in ${WiringPi}...")
+  find_library(WIRINGPI_LIBRARY NAMES libwiringPi.a)
+  IF(WIRINGPI_LIBRARY)
+    message(STATUS "WiringPi library was found in ${WIRINGPI_LIBRARY}...")
+    add_definitions(-DWITH_GPIO)
+    target_link_libraries(domoticz ${WIRINGPI_LIBRARY})
   else()
-    message(STATUS "==== WiringPi include file (wiringPi.h) not found. GPIO support disabled.")
-    message(STATUS "==== (Please follow http://wiringpi.com/download-and-install/ if you want to use GPIO.)")
-  ENDIF(WiringPi)
+    message(STATUS "==== WiringPi library not found. GPIO support disabled.")
+  message(STATUS "==== (Please follow http://wiringpi.com/download-and-install/ if you want to use GPIO.)")
+  ENDIF()
 else()
-  message(STATUS "Not building on Raspberry Pi. GPIO support disabled.")
-ENDIF(RaspberryPi)
+  message(STATUS "==== WiringPi include file (wiringPi.h) not found. GPIO support disabled.")
+  message(STATUS "==== (Please follow http://wiringpi.com/download-and-install/ if you want to use GPIO.)")
+ENDIF(WiringPi)
 
 find_path(TELLDUSCORE_INCLUDE NAMES telldus-core.h)
 if (TELLDUSCORE_INCLUDE)
@@ -567,10 +562,26 @@ else()
   message(STATUS "Not found telldus-core (telldus-core.h), not adding tellstick support")
 endif (TELLDUSCORE_INCLUDE)
 
+# Under FreeBSD sys/sysinfo?h exist using a separate pkg
+IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  find_path(SYSINFO_INCLUDE NAMES sys/sysinfo.h)
+  if (SYSINFO_INCLUDE)
+     message(STATUS "Found sys/sysinfo.h at : ${SYSINFO_INCLUDE}")
+     find_library(SYSINFO_LIBRARIES NAMES libsysinfo.so)
+     if(SYSINFO_LIBRARIES)
+       message(STATUS "Found libsysinfo.so at : ${SYSINFO_LIBRARIES}")
+     else(SYSINFO_LIBRARIES)
+       message(FATAL_ERROR "Cannot find libsysinfo, please install it with 'pkg install libsysinfo'")
+     endif(SYSINFO_LIBRARIES)
+  else()
+     message(FATAL_ERROR "Cannot find sysinfo.h, please install it with 'pkg install libsysinfo'")
+  endif()
+ENDIF()
+
 IF(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_link_libraries(domoticz ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} pthread ${LUA_LIBRARIES} ${MQTT_LIBRARIES} ${SQLite_LIBRARIES} ${CMAKE_DL_LIBS} ${TELLDUS_LIBRARIES})
 else()
-  target_link_libraries(domoticz -lrt ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} pthread ${LUA_LIBRARIES} ${MQTT_LIBRARIES} ${SQLite_LIBRARIES} ${CMAKE_DL_LIBS} ${TELLDUS_LIBRARIES})
+  target_link_libraries(domoticz -lrt ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} pthread ${LUA_LIBRARIES} ${MQTT_LIBRARIES} ${SQLite_LIBRARIES} ${CMAKE_DL_LIBS} ${TELLDUS_LIBRARIES} ${SYSINFO_LIBRARIES})
 ENDIF()
 
 ADD_PRECOMPILED_HEADER(domoticz "main/stdafx.h")

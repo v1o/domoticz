@@ -6,6 +6,7 @@
 #include "../main/Helper.h"
 #include "../main/RFXtrx.h"
 #include "../main/SQLHelper.h"
+#include "../main/mainworker.h"
 #include "hardwaretypes.h"
 
 #define round(a) ( int ) ( a + .5 )
@@ -516,8 +517,7 @@ void CDomoticzHardwareBase::SendSwitchIfNotExists(const int NodeID, const int Ch
 
 void CDomoticzHardwareBase::SendSwitch(const int NodeID, const int ChildID, const int BatteryLevel, const bool bOn, const double Level, const std::string &defaultname)
 {
-	bool bDeviceExits = true;
-	double rlevel = (15.0 / 100)*Level;
+	double rlevel = (16.0 / 100.0)*Level;
 	int level = int(rlevel);
 
 	//make device ID
@@ -531,11 +531,7 @@ void CDomoticzHardwareBase::SendSwitch(const int NodeID, const int ChildID, cons
 	std::vector<std::vector<std::string> > result;
 	result = m_sql.safe_query("SELECT Name,nValue,sValue FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Unit == %d) AND (Type==%d) AND (Subtype==%d)",
 		m_HwdID, szIdx, ChildID, int(pTypeLighting2), int(sTypeAC));
-	if (result.size() < 1)
-	{
-		bDeviceExits = false;
-	}
-	else
+	if (!result.empty())
 	{
 		//check if we have a change, if not do not update it
 		int nvalue = atoi(result[0][1].c_str());
@@ -667,6 +663,16 @@ void CDomoticzHardwareBase::SendPercentageSensor(const int NodeID, const int Chi
 	sDecodeRXMessage(this, (const unsigned char *)&gDevice, defaultname.c_str(), BatteryLevel);
 }
 
+bool CDomoticzHardwareBase::CheckPercentageSensorExists(const int NodeID, const int ChildID)
+{
+	std::vector<std::vector<std::string> > result;
+	char szTmp[30];
+	sprintf(szTmp, "%08X", (unsigned int)NodeID);
+	result = m_sql.safe_query("SELECT Name FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) AND (Subtype==%d)",
+		m_HwdID, szTmp, int(pTypeGeneral), int(sTypePercentage));
+	return (!result.empty());
+}
+
 void CDomoticzHardwareBase::SendWaterflowSensor(const int NodeID, const int ChildID, const int BatteryLevel, const float LPM, const std::string &defaultname)
 {
 	_tGeneralDevice gDevice;
@@ -677,14 +683,31 @@ void CDomoticzHardwareBase::SendWaterflowSensor(const int NodeID, const int Chil
 	sDecodeRXMessage(this, (const unsigned char *)&gDevice, defaultname.c_str(), BatteryLevel);
 }
 
-bool CDomoticzHardwareBase::CheckPercentageSensorExists(const int NodeID, const int ChildID)
+void CDomoticzHardwareBase::SendCustomSensor(const int NodeID, const int ChildID, const int BatteryLevel, const float Dust, const std::string &defaultname, const std::string &defaultLabel)
 {
 	std::vector<std::vector<std::string> > result;
 	char szTmp[30];
-	sprintf(szTmp, "%08X", (unsigned int)NodeID);
+	sprintf(szTmp, "0000%02X%02X", NodeID, ChildID);
 	result = m_sql.safe_query("SELECT Name FROM DeviceStatus WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) AND (Subtype==%d)",
-		m_HwdID, szTmp, int(pTypeGeneral), int(sTypePercentage));
-	return (!result.empty());
+		m_HwdID, szTmp, int(pTypeGeneral), int(sTypeCustom));
+	bool bDoesExists = !result.empty();
+
+	_tGeneralDevice gDevice;
+	gDevice.subtype = sTypeCustom;
+	gDevice.id = ChildID;
+	gDevice.floatval1 = Dust;
+	gDevice.intval1 = (NodeID<<8)|ChildID;
+
+	if (bDoesExists)
+		sDecodeRXMessage(this, (const unsigned char *)&gDevice, defaultname.c_str(), BatteryLevel);
+	else
+	{
+		m_mainworker.PushAndWaitRxMessage(this, (const unsigned char *)&gDevice, defaultname.c_str(), BatteryLevel);
+		//Set the Label
+		std::string soptions = "1;" + defaultLabel;
+		m_sql.safe_query("UPDATE DeviceStatus SET Options='%q' WHERE (HardwareID==%d) AND (DeviceID=='%q') AND (Type==%d) AND (Subtype==%d)",
+			soptions.c_str(), m_HwdID, szTmp, int(pTypeGeneral), int(sTypeCustom));
+	}
 }
 
 //wind direction is in steps of 22.5 degrees (360/16)
