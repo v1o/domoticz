@@ -216,7 +216,7 @@ bool CPhilipsHue::SwitchLight(const int nodeID, const std::string &LCmd, const i
 	}
 	else if (LCmd == "Off")
 	{
-		sPostData << "{\"on\": false }";
+		sPostData << "{\"on\": false, \"transitiontime\": 30 }";
 	}
 	else if (LCmd == "Set Level")
 	{
